@@ -321,6 +321,10 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
           <div class="form-row">
             <div style="flex:1"><label>عنوان الاختبار</label><input type="text" id="qz-title" placeholder="مثال: اختبار قصة يوسف الصديق"></div>
           </div>
+          <div class="form-row">
+            <div style="flex:1"><label>وقت فتح الاختبار</label><input type="datetime-local" id="qz-opens-at"></div>
+            <div style="flex:1"><label>وقت إغلاق الاختبار</label><input type="datetime-local" id="qz-closes-at"></div>
+          </div>
           <div id="qz-questions-builder"></div>
           <button class="btn" onclick="addQuestionToBuilder()">➕ إضافة سؤال</button>
           <button class="btn btn-primary" onclick="saveQuiz()" style="margin-right:8px">💾 حفظ الاختبار</button>
@@ -1117,6 +1121,12 @@ function addQuestionToBuilder(){
 async function saveQuiz(){
   const title=document.getElementById('qz-title').value.trim();
   if(!title)return toast('ادخل عنوان الاختبار','error');
+  const opensAtRaw=document.getElementById('qz-opens-at').value;
+  const closesAtRaw=document.getElementById('qz-closes-at').value;
+  if(!opensAtRaw||!closesAtRaw)return toast('حدد وقت الفتح والإغلاق','error');
+  const opensAt=new Date(opensAtRaw);
+  const closesAt=new Date(closesAtRaw);
+  if(closesAt<=opensAt)return toast('وقت الإغلاق يجب أن يكون بعد وقت الفتح','error');
   const questionDivs=document.querySelectorAll('#qz-questions-builder .qz-question-card');
   if(!questionDivs.length)return toast('أضف سؤال واحد على الأقل','error');
   const questions=[];
@@ -1132,13 +1142,15 @@ async function saveQuiz(){
     if(!text||!a||!b||!c||!d){toast('أكمل كل أسئلة الاختبار والاختيارات','error');return;}
     questions.push({question:text,option_a:a,option_b:b,option_c:c,option_d:d,correct_option:correct});
   }
-  const{data:quiz,error}=await sb.from('quizzes').insert({title}).select().single();
+  const{data:quiz,error}=await sb.from('quizzes').insert({title,opens_at:opensAt.toISOString(),closes_at:closesAt.toISOString()}).select().single();
   if(error)return toast('خطأ: '+error.message,'error');
   const rows=questions.map((q,i)=>({...q,quiz_id:quiz.id,order_num:i}));
   const{error:qErr}=await sb.from('quiz_questions').insert(rows);
   if(qErr)return toast('خطأ: '+qErr.message,'error');
   toast('تم حفظ الاختبار ✅','success');
   document.getElementById('qz-title').value='';
+  document.getElementById('qz-opens-at').value='';
+  document.getElementById('qz-closes-at').value='';
   document.getElementById('qz-questions-builder').innerHTML='';
   quizQuestionCount=0;
   loadQuizzes();
@@ -1148,8 +1160,19 @@ async function loadQuizzes(){
   const el=document.getElementById('quizzes-list');
   if(!el)return;
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد اختبارات بعد</div>';return;}
-  el.innerHTML=data.map(q=>`<div class="list-row"><div class="icon-box" style="background:var(--purple-light);color:var(--purple)">📝</div><div class="row-info"><div class="row-name">${escHtml(q.title)}</div><div class="row-sub">${q.quiz_questions?.length||0} سؤال</div></div><button class="btn btn-sm" onclick="viewQuizResults('${q.id}','${escHtml(q.title).replace(/'/g,"&#39;")}')">📊 النتائج</button><button class="btn btn-sm btn-danger" onclick="deleteQuiz('${q.id}')">🗑</button></div>`).join('');
+  const now=new Date();
+  el.innerHTML=data.map(q=>{
+    const opens=q.opens_at?new Date(q.opens_at):null;
+    const closes=q.closes_at?new Date(q.closes_at):null;
+    let statusBadge='';
+    if(opens&&now<opens)statusBadge='<span class="badge badge-amber">لم يبدأ بعد</span>';
+    else if(closes&&now>closes)statusBadge='<span class="badge badge-red">انتهى</span>';
+    else statusBadge='<span class="badge badge-green">مفتوح الآن</span>';
+    const timeInfo=opens&&closes?`${opens.toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'})} → ${closes.toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'})}`:'';
+    return`<div class="list-row"><div class="icon-box" style="background:var(--purple-light);color:var(--purple)">📝</div><div class="row-info"><div class="row-name">${escHtml(q.title)} ${statusBadge}</div><div class="row-sub">${q.quiz_questions?.length||0} سؤال${timeInfo?' · '+timeInfo:''}</div></div><button class="btn btn-sm" onclick="viewQuizResults('${q.id}','${escHtml(q.title).replace(/'/g,"&#39;")}')">📊 النتائج</button><button class="btn btn-sm btn-danger" onclick="deleteQuiz('${q.id}')">🗑</button></div>`;
+  }).join('');
 }
+
 async function deleteQuiz(id){
   if(!confirm('حذف الاختبار بالكامل؟'))return;
   await sb.from('quizzes').delete().eq('id',id);
@@ -1170,14 +1193,33 @@ async function loadStudentQuizzes(){
   (results||[]).forEach(r=>resultMap[r.quiz_id]={score:r.score,total:r.total});
   const el=document.getElementById('s-quizzes-list');
   if(!quizzes||!quizzes.length){el.innerHTML='<div class="empty">لا يوجد اختبارات بعد</div>';return;}
+  const now=new Date();
   el.innerHTML=quizzes.map(q=>{
     const done=resultMap[q.id];
-    return`<div class="list-row"><div class="icon-box" style="background:var(--purple-light);color:var(--purple)">📝</div><div class="row-info"><div class="row-name">${escHtml(q.title)}</div><div class="row-sub">${q.quiz_questions?.length||0} سؤال${done?` · نتيجتك: ${done.score}/${done.total}`:''}</div></div><button class="btn btn-sm ${done?'':'btn-primary'}" onclick="startQuiz('${q.id}')">${done?'🔁 إعادة المحاولة':'▶ ابدأ الاختبار'}</button></div>`;
+    const opens=q.opens_at?new Date(q.opens_at):null;
+    const closes=q.closes_at?new Date(q.closes_at):null;
+    let btn,statusTxt='';
+    if(opens&&now<opens){
+      statusTxt=`<span class="badge badge-amber">يفتح في: ${opens.toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'})}</span>`;
+      btn=`<button class="btn btn-sm" disabled style="opacity:.5;cursor:not-allowed">🔒 لم يبدأ بعد</button>`;
+    } else if(closes&&now>closes){
+      statusTxt=`<span class="badge badge-red">انتهى الوقت</span>`;
+      btn=`<button class="btn btn-sm" disabled style="opacity:.5;cursor:not-allowed">⏰ انتهى الوقت</button>`;
+    } else {
+      statusTxt=closes?`<span class="badge badge-green">مفتوح حتى ${closes.toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'})}</span>`:'';
+      btn=`<button class="btn btn-sm ${done?'':'btn-primary'}" onclick="startQuiz('${q.id}')">${done?'🔁 إعادة المحاولة':'▶ ابدأ الاختبار'}</button>`;
+    }
+    return`<div class="list-row"><div class="icon-box" style="background:var(--purple-light);color:var(--purple)">📝</div><div class="row-info"><div class="row-name">${escHtml(q.title)}</div><div class="row-sub">${q.quiz_questions?.length||0} سؤال${done?` · نتيجتك: ${done.score}/${done.total}`:''} ${statusTxt}</div></div>${btn}</div>`;
   }).join('');
 }
+
 let currentQuizId=null,currentQuizQuestions=[],currentQuizAnswers={};
 async function startQuiz(quizId){
   const{data:quiz}=await sb.from('quizzes').select('*').eq('id',quizId).single();
+  if(!quiz)return toast('الاختبار غير موجود','error');
+  const now=new Date();
+  if(quiz.opens_at&&now<new Date(quiz.opens_at))return toast('الاختبار لم يبدأ بعد','error');
+  if(quiz.closes_at&&now>new Date(quiz.closes_at))return toast('انتهى وقت هذا الاختبار','error');
   const{data:questions}=await sb.from('quiz_questions').select('*').eq('quiz_id',quizId).order('order_num');
   if(!questions||!questions.length)return toast('هذا الاختبار لا يحتوي على أسئلة','error');
   currentQuizId=quizId;currentQuizQuestions=questions;currentQuizAnswers={};
@@ -1193,6 +1235,7 @@ async function startQuiz(quizId){
     </div>
   `).join('')+`<button class="btn btn-primary" onclick="submitQuiz()">✅ إرسال الإجابات</button>`;
 }
+
 function selectQuizOption(qId,opt){
   currentQuizAnswers[qId]=opt;
   ['a','b','c','d'].forEach(o=>{
