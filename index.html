@@ -298,6 +298,9 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
             <div style="flex:1;min-width:120px"><label>مخصص لطالب</label><select id="mem-student"><option value="">-- كل الطلاب --</option></select></div>
           </div>
           <div class="form-row">
+            <div style="flex:1"><label>نص المحفوظة</label><textarea id="mem-text" rows="3" placeholder="اكتب نص المحفوظة هنا..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;resize:vertical"></textarea></div>
+          </div>
+          <div class="form-row">
             <div style="flex:1;min-width:140px"><label>رابط الملف (PDF / نص)</label><input type="text" id="mem-file" placeholder="https://..." dir="ltr"></div>
             <div style="flex:1;min-width:140px"><label>رابط الصوت (voice)</label><input type="text" id="mem-audio" placeholder="https://..." dir="ltr"></div>
           </div>
@@ -948,10 +951,10 @@ async function addMemo(){
   const title=document.getElementById('mem-title').value.trim();
   if(!title)return toast('ادخل عنوان المحفوظة','error');
   const sid=document.getElementById('mem-student').value||null;
-  const{error}=await sb.from('memorizations').insert({title,category:document.getElementById('mem-category').value,student_id:sid,file_url:document.getElementById('mem-file').value.trim()||null,audio_url:document.getElementById('mem-audio').value.trim()||null});
+  const{error}=await sb.from('memorizations').insert({title,category:document.getElementById('mem-category').value,student_id:sid,text_content:document.getElementById('mem-text').value.trim()||null,file_url:document.getElementById('mem-file').value.trim()||null,audio_url:document.getElementById('mem-audio').value.trim()||null});
   if(error)return toast('خطأ: '+error.message,'error');
   toast('تم الإضافة ✅','success');
-  ['mem-title','mem-file','mem-audio'].forEach(id=>document.getElementById(id).value='');
+  ['mem-title','mem-text','mem-file','mem-audio'].forEach(id=>document.getElementById(id).value='');
   loadMemo();
 }
 async function deleteMemo(id){if(!confirm('حذف المحفوظة؟'))return;await sb.from('memorizations').delete().eq('id',id);toast('تم الحذف','success');loadMemo();}
@@ -1673,7 +1676,13 @@ function renderHymnsHTML(list){
   }).join('');
 }
 function renderMemoHTML(list,isStudent){
-  return list.map(m=>`<div class="list-row"><div class="icon-box" style="background:var(--amber-light);color:var(--amber)">📖</div><div class="row-info"><div class="row-name">${m.title}</div><div class="row-sub"><span class="badge badge-amber">${CAT_LABELS[m.category]||m.category}</span>${!isStudent&&m.students?' · '+m.students.name:''}</div></div><div class="row-actions">${m.file_url?`<a href="${m.file_url}" target="_blank" class="btn btn-sm btn-primary">📄 ملف</a>`:''} ${m.audio_url?`<a href="${m.audio_url}" target="_blank" class="btn btn-sm">🔊 صوت</a>`:''}</div></div>`).join('');
+  list.forEach(m=>memoCache[m.id]=m);
+  return list.map(m=>`<div class="list-row"><div class="icon-box" style="background:var(--amber-light);color:var(--amber)">📖</div><div class="row-info"><div class="row-name">${escHtml(m.title)}</div><div class="row-sub"><span class="badge badge-amber">${CAT_LABELS[m.category]||m.category}</span>${!isStudent&&m.students?' · '+escHtml(m.students.name):''}</div></div><div class="row-actions">${m.text_content?`<button class="btn btn-sm" onclick="showMemoText('${m.id}')">📝 النص</button>`:''} ${m.file_url?`<a href="${m.file_url}" target="_blank" class="btn btn-sm btn-primary">📄 ملف</a>`:''} ${m.audio_url?`<a href="${m.audio_url}" target="_blank" class="btn btn-sm">🔊 صوت</a>`:''}</div></div>`).join('');
+}
+function showMemoText(id){
+  const m=memoCache[id];
+  if(!m)return;
+  alert(m.title+':\n\n'+(m.text_content||''));
 }
 
 // ── LOGIN ──
@@ -1870,6 +1879,7 @@ function editMemo(m) {
       <option value="psalms" ${m.category==='psalms'?'selected':''}>مزامير</option>
       <option value="general" ${m.category==='general'?'selected':''}>قطع</option>
     </select></div></div>
+    <div class="form-row"><div style="flex:1"><label>نص المحفوظة</label><textarea id="em-text" rows="3" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;resize:vertical">${m.text_content||''}</textarea></div></div>
     <div class="form-row"><div style="flex:1"><label>رابط الملف</label><input type="text" id="em-file" value="${m.file_url||''}" dir="ltr"></div></div>
     <div class="form-row"><div style="flex:1"><label>رابط الصوت</label><input type="text" id="em-audio" value="${m.audio_url||''}" dir="ltr"></div></div>
   `, async () => {
@@ -1877,6 +1887,7 @@ function editMemo(m) {
     if(!title) return toast('ادخل العنوان','error');
     const {error} = await sb.from('memorizations').update({
       title, category: document.getElementById('em-cat').value,
+      text_content: document.getElementById('em-text').value.trim()||null,
       file_url: document.getElementById('em-file').value.trim()||null,
       audio_url: document.getElementById('em-audio').value.trim()||null
     }).eq('id', m.id);
