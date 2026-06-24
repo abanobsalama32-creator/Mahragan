@@ -478,6 +478,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
         <button class="tab" onclick="teacherTab('hymns',this)">🎵 الألحان</button>
         <button class="tab" onclick="teacherTab('coptic',this)">🕊 القبطي</button>
         <button class="tab" onclick="teacherTab('memo',this)">📖 المحفوظات</button>
+        <button class="tab" onclick="teacherTab('quizzes',this)">📝 الاختبارات</button>
         <button class="tab" onclick="teacherTab('hymn-assign',this)">🎯 تعيين الألحان</button>
       </div>
       <div id="teacher-att" class="section-page active">
@@ -598,6 +599,18 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
       </div>
       <div id="teacher-coptic" class="section-page">
         <div class="card">
+          <div class="card-header"><span class="card-title">🕊 إضافة درس قبطي</span></div>
+          <div class="form-row">
+            <div style="flex:2;min-width:140px"><label>اسم الدرس</label><input type="text" id="tch-name" placeholder="اسم الدرس القبطي"></div>
+            <div style="flex:1;min-width:120px"><label>القسم</label><select id="tch-category"><option value="solo">فردي</option><option value="group">جماعي</option></select></div>
+          </div>
+          <div class="form-row">
+            <div style="flex:1;min-width:140px"><label>رابط الملف (PDF / نص)</label><input type="text" id="tch-file" placeholder="https://..." dir="ltr"></div>
+            <div style="flex:1;min-width:140px"><label>رابط الصوت (voice)</label><input type="text" id="tch-audio" placeholder="https://..." dir="ltr"></div>
+          </div>
+          <button class="btn btn-primary" onclick="addTeacherCopticHymn()">➕ إضافة</button>
+        </div>
+        <div class="card">
           <div class="card-header"><span class="card-title">🕊 القبطي</span></div>
           <div class="inner-tabs">
             <button class="inner-tab active" onclick="filterTCoptic('all',this)">الكل</button>
@@ -619,6 +632,26 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
           <div id="t-memo-list"><div class="loading"><span class="spinner"></span></div></div>
         </div>
       </div>
+      <div id="teacher-quizzes" class="section-page">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📝 إنشاء اختبار جديد</span></div>
+          <div class="form-row">
+            <div style="flex:1"><label>عنوان الاختبار</label><input type="text" id="tqz-title" placeholder="مثال: اختبار قصة يوسف الصديق"></div>
+          </div>
+          <div class="form-row">
+            <div style="flex:1"><label>وقت فتح الاختبار</label><input type="datetime-local" id="tqz-opens-at"></div>
+            <div style="flex:1"><label>وقت إغلاق الاختبار</label><input type="datetime-local" id="tqz-closes-at"></div>
+          </div>
+          <div id="tqz-questions-builder"></div>
+          <button class="btn" onclick="addQuestionToTeacherBuilder()">➕ إضافة سؤال</button>
+          <button class="btn btn-primary" onclick="saveTeacherQuiz()" style="margin-right:8px">💾 حفظ الاختبار</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">الاختبارات المنشورة</span></div>
+          <div id="t-quizzes-list"><div class="loading"><span class="spinner"></span></div></div>
+        </div>
+      </div>
+
       <div id="teacher-hymn-assign" class="section-page">
         <div class="card">
           <div class="card-header"><span class="card-title">🎯 تعيين قسم الألحان للفصل</span></div>
@@ -871,7 +904,9 @@ function editCoptic(c){
       audio_url: document.getElementById('ec-audio').value.trim()||null
     }).eq('id', c.id);
     if(error) return toast('خطأ: '+error.message,'error');
-    toast('تم التعديل ✅','success'); closeModal(); loadCopticHymns();
+    toast('تم التعديل ✅','success'); closeModal();
+    if(document.getElementById('coptic-list'))loadCopticHymns();
+    if(document.getElementById('t-coptic-list'))loadTeacherCoptic();
   });
 }
 function filterCoptic(cat,btn){
@@ -887,8 +922,15 @@ async function addCopticHymn(){
   ['ch-name','ch-file','ch-audio'].forEach(id=>document.getElementById(id).value='');
   loadCopticHymns();
 }
-async function deleteCoptic(id){if(!confirm('حذف الدرس؟'))return;await sb.from('coptic_hymns').delete().eq('id',id);toast('تم الحذف','success');loadCopticHymns();}
+async function deleteCoptic(id){
+  if(!confirm('حذف الدرس؟'))return;
+  await sb.from('coptic_hymns').delete().eq('id',id);
+  toast('تم الحذف','success');
+  if(document.getElementById('coptic-list'))loadCopticHymns();
+  if(document.getElementById('t-coptic-list'))loadTeacherCoptic();
+}
 function renderCopticHTML(list,withDelete){
+  list.forEach(c=>copticCache[c.id]=c);
   return list.map(h=>`<div class="list-row"><div class="icon-box" style="background:var(--teal-light);color:var(--teal)">🕊</div><div class="row-info"><div class="row-name">${escHtml(h.name)}</div><div class="row-sub"><span class="badge badge-teal">${CAT_LABELS[h.category]||h.category}</span></div></div><div class="row-actions">${h.file_url?`<a href="${h.file_url}" target="_blank" class="btn btn-sm">📄 ملف</a>`:''} ${h.audio_url?`<a href="${h.audio_url}" target="_blank" class="btn btn-sm">🔊 صوت</a>`:''}${withDelete?`<button class="btn btn-sm" onclick="editCopticById('${h.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteCoptic('${h.id}')">🗑</button>`:''}</div></div>`).join('');
 }
 
@@ -902,11 +944,20 @@ function renderTCoptic(cat){
   if(!el)return;
   const list=cat==='all'?allTCoptic:allTCoptic.filter(h=>h.category===cat);
   if(!list.length){el.innerHTML='<div class="empty">لا يوجد دروس قبطية</div>';return;}
-  el.innerHTML=renderCopticHTML(list,false);
+  el.innerHTML=renderCopticHTML(list,true);
 }
 function filterTCoptic(cat,btn){
   document.querySelectorAll('#teacher-coptic .inner-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
   renderTCoptic(cat);
+}
+async function addTeacherCopticHymn(){
+  const name=document.getElementById('tch-name').value.trim();
+  if(!name)return toast('ادخل اسم الدرس','error');
+  const{error}=await sb.from('coptic_hymns').insert({name,category:document.getElementById('tch-category').value,file_url:document.getElementById('tch-file').value.trim()||null,audio_url:document.getElementById('tch-audio').value.trim()||null});
+  if(error)return toast('خطأ: '+error.message,'error');
+  toast('تم الإضافة ✅','success');
+  ['tch-name','tch-file','tch-audio'].forEach(id=>document.getElementById(id).value='');
+  loadTeacherCoptic();
 }
 
 // ── COPTIC (student) ──
@@ -1188,6 +1239,89 @@ async function viewQuizResults(quizId,quizTitle){
   alert(`نتائج اختبار: ${quizTitle}\n\n${lines}`);
 }
 
+// ── QUIZZES (teacher) ──
+let teacherQuizQuestionCount=0;
+function addQuestionToTeacherBuilder(){
+  teacherQuizQuestionCount++;
+  const qn=teacherQuizQuestionCount;
+  const el=document.getElementById('tqz-questions-builder');
+  const div=document.createElement('div');
+  div.className='qz-question-card';
+  div.id='tqz-q-'+qn;
+  div.innerHTML=`
+    <div class="qz-question-header">
+      <span class="qz-question-num">سؤال ${qn}</span>
+      <button class="btn btn-sm btn-danger" onclick="document.getElementById('tqz-q-${qn}').remove()">🗑 حذف السؤال</button>
+    </div>
+    <div class="form-row"><input type="text" id="tqz-q-${qn}-text" placeholder="نص السؤال" style="width:100%"></div>
+    <div class="qz-option-row"><input type="radio" name="tqz-correct-${qn}" value="a" class="qz-correct-radio" checked><input type="text" id="tqz-q-${qn}-a" placeholder="الاختيار أ"></div>
+    <div class="qz-option-row"><input type="radio" name="tqz-correct-${qn}" value="b" class="qz-correct-radio"><input type="text" id="tqz-q-${qn}-b" placeholder="الاختيار ب"></div>
+    <div class="qz-option-row"><input type="radio" name="tqz-correct-${qn}" value="c" class="qz-correct-radio"><input type="text" id="tqz-q-${qn}-c" placeholder="الاختيار ج"></div>
+    <div class="qz-option-row"><input type="radio" name="tqz-correct-${qn}" value="d" class="qz-correct-radio"><input type="text" id="tqz-q-${qn}-d" placeholder="الاختيار د"></div>
+    <p style="font-size:11px;color:var(--text2);margin-top:4px">✓ اختر الدائرة بجانب الإجابة الصحيحة</p>
+  `;
+  el.appendChild(div);
+}
+async function saveTeacherQuiz(){
+  const title=document.getElementById('tqz-title').value.trim();
+  if(!title)return toast('ادخل عنوان الاختبار','error');
+  const opensAtRaw=document.getElementById('tqz-opens-at').value;
+  const closesAtRaw=document.getElementById('tqz-closes-at').value;
+  if(!opensAtRaw||!closesAtRaw)return toast('حدد وقت الفتح والإغلاق','error');
+  const opensAt=new Date(opensAtRaw);
+  const closesAt=new Date(closesAtRaw);
+  if(closesAt<=opensAt)return toast('وقت الإغلاق يجب أن يكون بعد وقت الفتح','error');
+  const questionDivs=document.querySelectorAll('#tqz-questions-builder .qz-question-card');
+  if(!questionDivs.length)return toast('أضف سؤال واحد على الأقل','error');
+  const questions=[];
+  for(const div of questionDivs){
+    const qid=div.id.replace('tqz-q-','');
+    const text=document.getElementById(`tqz-q-${qid}-text`).value.trim();
+    const a=document.getElementById(`tqz-q-${qid}-a`).value.trim();
+    const b=document.getElementById(`tqz-q-${qid}-b`).value.trim();
+    const c=document.getElementById(`tqz-q-${qid}-c`).value.trim();
+    const d=document.getElementById(`tqz-q-${qid}-d`).value.trim();
+    const correctRadio=div.querySelector(`input[name="tqz-correct-${qid}"]:checked`);
+    const correct=correctRadio?correctRadio.value:'a';
+    if(!text||!a||!b||!c||!d){toast('أكمل كل أسئلة الاختبار والاختيارات','error');return;}
+    questions.push({question:text,option_a:a,option_b:b,option_c:c,option_d:d,correct_option:correct});
+  }
+  const{data:quiz,error}=await sb.from('quizzes').insert({title,opens_at:opensAt.toISOString(),closes_at:closesAt.toISOString()}).select().single();
+  if(error)return toast('خطأ: '+error.message,'error');
+  const rows=questions.map((q,i)=>({...q,quiz_id:quiz.id,order_num:i}));
+  const{error:qErr}=await sb.from('quiz_questions').insert(rows);
+  if(qErr)return toast('خطأ: '+qErr.message,'error');
+  toast('تم حفظ الاختبار ✅','success');
+  document.getElementById('tqz-title').value='';
+  document.getElementById('tqz-opens-at').value='';
+  document.getElementById('tqz-closes-at').value='';
+  document.getElementById('tqz-questions-builder').innerHTML='';
+  teacherQuizQuestionCount=0;
+  loadTeacherQuizzes();
+}
+async function loadTeacherQuizzes(){
+  const{data}=await sb.from('quizzes').select('*,quiz_questions(id)').order('created_at',{ascending:false});
+  const el=document.getElementById('t-quizzes-list');
+  if(!el)return;
+  if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد اختبارات بعد</div>';return;}
+  const now=new Date();
+  el.innerHTML=data.map(q=>{
+    const opens=q.opens_at?new Date(q.opens_at):null;
+    const closes=q.closes_at?new Date(q.closes_at):null;
+    let statusBadge='';
+    if(opens&&now<opens)statusBadge='<span class="badge badge-amber">لم يبدأ بعد</span>';
+    else if(closes&&now>closes)statusBadge='<span class="badge badge-red">انتهى</span>';
+    else statusBadge='<span class="badge badge-green">مفتوح الآن</span>';
+    const timeInfo=opens&&closes?`${opens.toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'})} → ${closes.toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'})}`:'';
+    return`<div class="list-row"><div class="icon-box" style="background:var(--purple-light);color:var(--purple)">📝</div><div class="row-info"><div class="row-name">${escHtml(q.title)} ${statusBadge}</div><div class="row-sub">${q.quiz_questions?.length||0} سؤال${timeInfo?' · '+timeInfo:''}</div></div><button class="btn btn-sm" onclick="viewQuizResults('${q.id}','${escHtml(q.title).replace(/'/g,"&#39;")}')">📊 النتائج</button><button class="btn btn-sm btn-danger" onclick="deleteTeacherQuiz('${q.id}')">🗑</button></div>`;
+  }).join('');
+}
+async function deleteTeacherQuiz(id){
+  if(!confirm('حذف الاختبار بالكامل؟'))return;
+  await sb.from('quizzes').delete().eq('id',id);
+  toast('تم الحذف','success');loadTeacherQuizzes();
+}
+
 // ── QUIZZES (student) ──
 async function loadStudentQuizzes(){
   const{data:quizzes}=await sb.from('quizzes').select('*,quiz_questions(id)').order('created_at',{ascending:false});
@@ -1356,7 +1490,7 @@ async function initTeacher(){
   const{data}=await sb.from('students').select('*').order('name');
   teacherStudents=data||[];
   document.getElementById('t-att-date').value=new Date().toISOString().split('T')[0];
-  await Promise.all([loadTeacherStudents(),loadTeacherAbsenceLog(),loadTeacherGrades(),loadTeacherLessons(),loadTeacherHymns(),loadTeacherCoptic(),loadTeacherMemo(),loadAssignStudents()]);
+  await Promise.all([loadTeacherStudents(),loadTeacherAbsenceLog(),loadTeacherGrades(),loadTeacherLessons(),loadTeacherHymns(),loadTeacherCoptic(),loadTeacherMemo(),loadAssignStudents(),loadTeacherQuizzes()]);
   await Promise.all([loadTeacherGradeSelects(),loadTeacherHymnGradeSelects(),loadTeacherMemoGradeSelects(),loadTeacherCopticGradeSelects()]);
   await Promise.all([loadTeacherHymnGrades(),loadTeacherMemoGrades(),loadTeacherCopticGrades()]);
 }
