@@ -147,6 +147,20 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
 .qz-take-question{font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text)}
 .qz-take-block{margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
 .qz-score-big{font-size:42px;font-weight:800;color:var(--blue);margin-bottom:8px}
+
+/* ── DRAG & DROP UPLOAD ── */
+.dropzone{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--gray)}
+.dropzone:hover,.dropzone.dragover{border-color:var(--blue);background:var(--blue-light)}
+.dropzone-icon{font-size:28px;margin-bottom:6px}
+.dropzone-text{font-size:13px;color:var(--text2)}
+.dropzone-hint{font-size:11px;color:var(--text3);margin-top:3px}
+.dropzone input[type="file"]{display:none}
+.upload-progress{margin-top:10px;display:none}
+.upload-progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.upload-progress-fill{height:100%;background:var(--blue);border-radius:3px;width:0%;transition:width .2s}
+.upload-progress-text{font-size:12px;color:var(--text2);margin-top:4px;text-align:center}
+.uploaded-file-chip{display:flex;align-items:center;gap:8px;background:var(--green-light);color:var(--green-dark);padding:8px 12px;border-radius:var(--radius-sm);font-size:13px;margin-top:8px}
+.uploaded-file-chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;margin-right:auto}
 </style>
 </head>
 <body>
@@ -217,6 +231,23 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
           <div class="form-row">
             <div style="flex:2;min-width:140px"><label>رابط الملف (PDF / Drive)</label><input type="text" id="l-url" placeholder="https://..." dir="ltr"></div>
             <div style="flex:1;min-width:120px"><label>تاريخ الدرس</label><input type="date" id="l-date"></div>
+          </div>
+          <div class="form-row">
+            <div style="flex:1">
+              <label>ريكورد الدرس (صوت / فيديو)</label>
+              <div class="dropzone" id="l-dropzone" onclick="document.getElementById('l-recording-file').click()">
+                <div class="dropzone-icon">🎬</div>
+                <div class="dropzone-text">اسحب الملف هنا أو اضغط للاختيار</div>
+                <div class="dropzone-hint">MP3, MP4, WAV, MOV — حتى 200MB</div>
+                <input type="file" id="l-recording-file" accept="audio/*,video/*">
+              </div>
+              <div class="upload-progress" id="l-upload-progress">
+                <div class="upload-progress-bar"><div class="upload-progress-fill" id="l-upload-fill"></div></div>
+                <div class="upload-progress-text" id="l-upload-text">جاري الرفع...</div>
+              </div>
+              <div id="l-uploaded-chip"></div>
+              <input type="hidden" id="l-recording" value="">
+            </div>
           </div>
           <button class="btn btn-primary" onclick="addLesson()">➕ رفع الدرس</button>
         </div>
@@ -775,6 +806,7 @@ const CAT_LABELS={'gospel':'إنجيل','psalms':'مزامير','general':'قط�
 
 // ── ADMIN INIT ──
 async function initAdmin(){
+  setupDropzone('l-dropzone','l-recording-file','l-recording','l-upload-progress','l-upload-fill','l-upload-text','l-uploaded-chip');
   // load students into teacherStudents so attendance & grades work
   const{data:stData}=await sb.from('students').select('*').order('name');
   teacherStudents=stData||[];
@@ -815,16 +847,67 @@ async function loadLessons(){
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد دروس بعد</div>';return;}
   if(cnt)cnt.textContent=data.length+' درس';
   data.forEach(l=>lessonCache[l.id]=l);
-  el.innerHTML=data.map(l=>`<div class="list-row"><div class="icon-box" style="background:var(--blue-light);color:var(--blue-dark)">📄</div><div class="row-info"><div class="row-name">${escHtml(l.title)}</div><div class="row-sub">فصل ${l.class} · ${l.lesson_date||''}</div></div><div class="row-actions">${l.file_url?`<a href="${l.file_url}" target="_blank" class="btn btn-sm">🔗 فتح</a>`:''}<button class="btn btn-sm" onclick="editLessonById('${l.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteLesson('${l.id}')">🗑</button></div></div>`).join('');
+  el.innerHTML=data.map(l=>`<div class="list-row"><div class="icon-box" style="background:var(--blue-light);color:var(--blue-dark)">📄</div><div class="row-info"><div class="row-name">${escHtml(l.title)}</div><div class="row-sub">فصل ${l.class} · ${l.lesson_date||''}</div></div><div class="row-actions">${l.file_url?`<a href="${l.file_url}" target="_blank" class="btn btn-sm">🔗 فتح</a>`:''} ${l.recording_url?`<a href="${l.recording_url}" target="_blank" class="btn btn-sm">🎬 ريكورد</a>`:''}<button class="btn btn-sm" onclick="editLessonById('${l.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteLesson('${l.id}')">🗑</button></div></div>`).join('');
+}
+
+// ── DRAG & DROP UPLOAD (lesson recordings) ──
+function setupDropzone(zoneId, inputId, hiddenId, progressId, fillId, textId, chipId){
+  const zone=document.getElementById(zoneId);
+  const input=document.getElementById(inputId);
+  if(!zone||!input||zone.dataset.init)return;
+  zone.dataset.init='1';
+  input.addEventListener('change',()=>{ if(input.files[0]) uploadRecording(input.files[0],hiddenId,progressId,fillId,textId,chipId); });
+  zone.addEventListener('dragover',e=>{ e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));
+  zone.addEventListener('drop',e=>{
+    e.preventDefault(); zone.classList.remove('dragover');
+    const file=e.dataTransfer.files[0];
+    if(file) uploadRecording(file,hiddenId,progressId,fillId,textId,chipId);
+  });
+}
+async function uploadRecording(file,hiddenId,progressId,fillId,textId,chipId){
+  const maxSize=200*1024*1024;
+  if(file.size>maxSize)return toast('الملف أكبر من 200MB','error');
+  const progress=document.getElementById(progressId);
+  const fill=document.getElementById(fillId);
+  const text=document.getElementById(textId);
+  progress.style.display='block';
+  fill.style.width='10%';
+  text.textContent='جاري الرفع... '+file.name;
+  const ext=file.name.split('.').pop();
+  const path=`${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+  try{
+    fill.style.width='40%';
+    const{data,error}=await sb.storage.from('lesson-recordings').upload(path,file,{cacheControl:'3600',upsert:false});
+    if(error){ progress.style.display='none'; return toast('خطأ في الرفع: '+error.message,'error'); }
+    fill.style.width='90%';
+    const{data:urlData}=sb.storage.from('lesson-recordings').getPublicUrl(path);
+    fill.style.width='100%';
+    text.textContent='تم الرفع ✅';
+    document.getElementById(hiddenId).value=urlData.publicUrl;
+    const chipEl=document.getElementById(chipId);
+    chipEl.innerHTML=`<div class="uploaded-file-chip">🎬 ${escHtml(file.name)}<button onclick="clearUploadedRecording('${hiddenId}','${chipId}','${progressId}')">✕ إزالة</button></div>`;
+    setTimeout(()=>{ progress.style.display='none'; },1500);
+  }catch(err){
+    progress.style.display='none';
+    toast('خطأ في الرفع','error');
+  }
+}
+function clearUploadedRecording(hiddenId,chipId,progressId){
+  document.getElementById(hiddenId).value='';
+  document.getElementById(chipId).innerHTML='';
+  document.getElementById(progressId).style.display='none';
 }
 
 async function addLesson(){
   const title=document.getElementById('l-title').value.trim();
   if(!title)return toast('ادخل اسم الدرس','error');
-  const{error}=await sb.from('lessons').insert({title,class:document.getElementById('l-class').value,file_url:document.getElementById('l-url').value.trim()||null,lesson_date:document.getElementById('l-date').value||null,created_by:currentUser.id});
+  const{error}=await sb.from('lessons').insert({title,class:document.getElementById('l-class').value,file_url:document.getElementById('l-url').value.trim()||null,lesson_date:document.getElementById('l-date').value||null,recording_url:document.getElementById('l-recording').value.trim()||null,created_by:currentUser.id});
   if(error)return toast('خطأ: '+error.message,'error');
   toast('تم رفع الدرس ✅','success');
-  document.getElementById('l-title').value='';document.getElementById('l-url').value='';
+  document.getElementById('l-title').value='';document.getElementById('l-url').value='';document.getElementById('l-recording').value='';
+  document.getElementById('l-uploaded-chip').innerHTML='';
+  document.getElementById('l-recording-file').value='';
   loadLessons();
 }
 async function deleteLesson(id){if(!confirm('حذف الدرس؟'))return;await sb.from('lessons').delete().eq('id',id);toast('تم الحذف','success');loadLessons();}
@@ -1649,7 +1732,7 @@ async function loadTeacherLessons(){
   const cls=currentUser.class_access;let q=sb.from('lessons').select('*').order('lesson_date',{ascending:false});if(cls!=='all')q=q.eq('class',cls);
   const{data}=await q,el=document.getElementById('t-lessons-list');
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد دروس</div>';return;}
-  el.innerHTML=data.map(l=>`<div class="list-row"><div class="icon-box" style="background:var(--blue-light);color:var(--blue-dark)">📄</div><div class="row-info"><div class="row-name">${l.title}</div><div class="row-sub">${l.lesson_date||''}</div></div>${l.file_url?`<a href="${l.file_url}" target="_blank" class="btn btn-sm">🔗 فتح</a>`:''}</div>`).join('');
+  el.innerHTML=data.map(l=>`<div class="list-row"><div class="icon-box" style="background:var(--blue-light);color:var(--blue-dark)">📄</div><div class="row-info"><div class="row-name">${escHtml(l.title)}</div><div class="row-sub">${l.lesson_date||''}</div></div>${l.file_url?`<a href="${l.file_url}" target="_blank" class="btn btn-sm">🔗 فتح</a>`:''} ${l.recording_url?`<a href="${l.recording_url}" target="_blank" class="btn btn-sm">🎬 ريكورد</a>`:''}</div>`).join('');
 }
 async function loadTeacherHymns(){
   const{data}=await sb.from('hymns').select('*').order('name');
@@ -1728,7 +1811,7 @@ async function loadStudentLessons(){
   const{data}=await sb.from('lessons').select('*').eq('class',currentUser.class).order('lesson_date',{ascending:false});
   const el=document.getElementById('s-lessons-list');
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد دروس بعد</div>';return;}
-  el.innerHTML=data.map(l=>`<div class="list-row"><div class="icon-box" style="background:var(--blue-light);color:var(--blue-dark)">📄</div><div class="row-info"><div class="row-name">${l.title}</div><div class="row-sub">${l.lesson_date||''}</div></div>${l.file_url?`<a href="${l.file_url}" target="_blank" class="btn btn-sm btn-primary">🔗 افتح</a>`:''}</div>`).join('');
+  el.innerHTML=data.map(l=>`<div class="list-row"><div class="icon-box" style="background:var(--blue-light);color:var(--blue-dark)">📄</div><div class="row-info"><div class="row-name">${escHtml(l.title)}</div><div class="row-sub">${l.lesson_date||''}</div></div>${l.file_url?`<a href="${l.file_url}" target="_blank" class="btn btn-sm btn-primary">🔗 افتح</a>`:''} ${l.recording_url?`<a href="${l.recording_url}" target="_blank" class="btn btn-sm">🎬 ريكورد</a>`:''}</div>`).join('');
 }
 async function loadStudentHymns(){
   const cat=currentUser.hymn_category||'level1';
@@ -1870,6 +1953,7 @@ function adminTab(name,btn){
   document.querySelectorAll('#admin-section>.section-page').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');document.getElementById('admin-'+name).classList.add('active');
   initStarRatings();
+  if(name==='lessons')setupDropzone('l-dropzone','l-recording-file','l-recording','l-upload-progress','l-upload-fill','l-upload-text','l-uploaded-chip');
 }
 function teacherTab(name,btn){
   document.querySelectorAll('#teacher-section>.tabs .tab').forEach(t=>t.classList.remove('active'));
@@ -1965,6 +2049,7 @@ function editLesson(l) {
       <div style="flex:1"><label>التاريخ</label><input type="date" id="el-date" value="${l.lesson_date||''}"></div>
     </div>
     <div class="form-row"><div style="flex:1"><label>رابط الملف</label><input type="text" id="el-url" value="${l.file_url||''}" dir="ltr"></div></div>
+    <div class="form-row"><div style="flex:1"><label>رابط الريكورد (صوت / فيديو)</label><input type="text" id="el-recording" value="${l.recording_url||''}" dir="ltr"></div></div>
   `, async () => {
     const title = document.getElementById('el-title').value.trim();
     if(!title) return toast('ادخل اسم الدرس','error');
@@ -1972,7 +2057,8 @@ function editLesson(l) {
       title,
       class: document.getElementById('el-class').value,
       lesson_date: document.getElementById('el-date').value||null,
-      file_url: document.getElementById('el-url').value.trim()||null
+      file_url: document.getElementById('el-url').value.trim()||null,
+      recording_url: document.getElementById('el-recording').value.trim()||null
     }).eq('id', l.id);
     if(error) return toast('خطأ: '+error.message,'error');
     toast('تم التعديل ✅','success'); closeModal(); loadLessons();
