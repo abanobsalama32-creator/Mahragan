@@ -109,11 +109,11 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
 .check-item input{display:none}
 
 /* ── STAR RATING ── */
-.star-rating{display:flex;gap:4px;direction:ltr;justify-content:flex-start}
-.star-rating .star{font-size:22px;cursor:pointer;color:#ddd;transition:color .1s,transform .1s;user-select:none}
+.star-rating{display:flex;gap:3px;direction:ltr;justify-content:flex-start;flex-wrap:wrap}
+.star-rating .star{font-size:18px;cursor:pointer;color:#ddd;transition:color .1s,transform .1s;user-select:none}
 .star-rating .star.filled{color:#F5A623}
 .star-rating .star:hover{transform:scale(1.15)}
-.star-display{display:inline-flex;gap:1px;direction:ltr}
+.star-display{display:inline-flex;gap:1px;direction:ltr;flex-wrap:wrap}
 .star-display .star{font-size:14px;color:#ddd}
 .star-display .star.filled{color:#F5A623}
 
@@ -127,6 +127,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
 .top3-row.rank-1{background:linear-gradient(90deg,#FFF7E0,#FFFDF5)}
 .top3-row.rank-2{background:#F4F4F2}
 .top3-row.rank-3{background:#FBF1E8}
+.top3-row.rank-4,.top3-row.rank-5,.top3-row.rank-6{background:var(--gray)}
 .top3-medal{font-size:22px;width:30px;text-align:center}
 .top3-name{flex:1;text-align:right;font-size:14px;font-weight:600;color:var(--text)}
 .top3-stars{font-size:13px}
@@ -385,7 +386,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
               <div style="flex:1;min-width:140px"><label>الدرس</label><select id="g-lesson"><option value="">-- اختر درس --</option></select></div>
             </div>
             <div class="form-row">
-              <div style="flex:1;min-width:120px"><label>التقييم</label><div class="star-rating" id="g-grade" data-value="5"></div></div>
+              <div style="flex:1;min-width:120px"><label>التقييم</label><div class="star-rating" id="g-grade" data-value="10"></div></div>
               <div style="flex:2;min-width:140px"><label>ملاحظة</label><input type="text" id="g-note" placeholder="..."></div>
             </div>
             <button class="btn btn-primary" onclick="addGrade()">💾 حفظ</button>
@@ -401,7 +402,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
               <div style="flex:1;min-width:140px"><label>اللحن</label><select id="hg-hymn"><option value="">-- اختر لحن --</option></select></div>
             </div>
             <div class="form-row">
-              <div style="flex:1;min-width:120px"><label>التقييم</label><div class="star-rating" id="hg-grade" data-value="5"></div></div>
+              <div style="flex:1;min-width:120px"><label>التقييم</label><div class="star-rating" id="hg-grade" data-value="10"></div></div>
               <div style="flex:2;min-width:140px"><label>ملاحظة</label><input type="text" id="hg-note" placeholder="..."></div>
             </div>
             <button class="btn btn-primary" onclick="addHymnGrade()">💾 حفظ</button>
@@ -417,7 +418,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
               <div style="flex:1;min-width:140px"><label>الدرس القبطي</label><select id="cg-coptic"><option value="">-- اختر --</option></select></div>
             </div>
             <div class="form-row">
-              <div style="flex:1;min-width:120px"><label>التقييم</label><div class="star-rating" id="cg-grade" data-value="5"></div></div>
+              <div style="flex:1;min-width:120px"><label>التقييم</label><div class="star-rating" id="cg-grade" data-value="10"></div></div>
               <div style="flex:2;min-width:140px"><label>ملاحظة</label><input type="text" id="cg-note" placeholder="..."></div>
             </div>
             <button class="btn btn-primary" onclick="addCopticGrade()">💾 حفظ</button>
@@ -433,7 +434,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
               <div style="flex:1;min-width:140px"><label>المحفوظة</label><select id="mg-memo"><option value="">-- اختر محفوظة --</option></select></div>
             </div>
             <div class="form-row">
-              <div style="flex:1;min-width:120px"><label>التقييم</label><div class="star-rating" id="mg-grade" data-value="5"></div></div>
+              <div style="flex:1;min-width:120px"><label>التقييم</label><div class="star-rating" id="mg-grade" data-value="10"></div></div>
               <div style="flex:2;min-width:140px"><label>ملاحظة</label><input type="text" id="mg-note" placeholder="..."></div>
             </div>
             <button class="btn btn-primary" onclick="addMemoGrade()">💾 حفظ</button>
@@ -556,7 +557,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
               <div style="flex:1"><label>الدرس</label><select id="tg-lesson"><option value="">-- اختر --</option></select></div>
             </div>
             <div class="form-row">
-              <div style="flex:1"><label>التقييم</label><div class="star-rating" id="tg-grade" data-value="5"></div></div>
+              <div style="flex:1"><label>التقييم</label><div class="star-rating" id="tg-grade" data-value="10"></div></div>
               <div style="flex:2"><label>ملاحظة</label><input type="text" id="tg-note" placeholder="..."></div>
             </div>
             <button class="btn btn-primary" onclick="addTeacherGrade()">💾 حفظ</button>
@@ -572,7 +573,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
               <div style="flex:1"><label>اللحن</label><select id="thg-hymn"><option value="">-- اختر --</option></select></div>
             </div>
             <div class="form-row">
-              <div style="flex:1"><label>التقييم</label><div class="star-rating" id="thg-grade" data-value="5"></div></div>
+              <div style="flex:1"><label>التقييم</label><div class="star-rating" id="thg-grade" data-value="10"></div></div>
               <div style="flex:2"><label>ملاحظة</label><input type="text" id="thg-note" placeholder="..."></div>
             </div>
             <button class="btn btn-primary" onclick="addTeacherHymnGrade()">💾 حفظ</button>
@@ -588,7 +589,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
               <div style="flex:1"><label>الدرس القبطي</label><select id="tcg-coptic"><option value="">-- اختر --</option></select></div>
             </div>
             <div class="form-row">
-              <div style="flex:1"><label>التقييم</label><div class="star-rating" id="tcg-grade" data-value="5"></div></div>
+              <div style="flex:1"><label>التقييم</label><div class="star-rating" id="tcg-grade" data-value="10"></div></div>
               <div style="flex:2"><label>ملاحظة</label><input type="text" id="tcg-note" placeholder="..."></div>
             </div>
             <button class="btn btn-primary" onclick="addTeacherCopticGrade()">💾 حفظ</button>
@@ -604,7 +605,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
               <div style="flex:1"><label>المحفوظة</label><select id="tmg-memo"><option value="">-- اختر --</option></select></div>
             </div>
             <div class="form-row">
-              <div style="flex:1"><label>التقييم</label><div class="star-rating" id="tmg-grade" data-value="5"></div></div>
+              <div style="flex:1"><label>التقييم</label><div class="star-rating" id="tmg-grade" data-value="10"></div></div>
               <div style="flex:2"><label>ملاحظة</label><input type="text" id="tmg-note" placeholder="..."></div>
             </div>
             <button class="btn btn-primary" onclick="addTeacherMemoGrade()">💾 حفظ</button>
@@ -1115,7 +1116,7 @@ async function addGrade(){
   if(!sid||!lid)return toast('اختر طالب ودرس','error');
   const{error}=await sb.from('grades').insert({student_id:sid,lesson_id:lid,grade:document.getElementById('g-grade').dataset.value,note:document.getElementById('g-note').value.trim()||null,teacher_id:currentUser.id});
   if(error)return toast('خطأ: '+error.message,'error');
-  toast('تم حفظ التقييم ✅','success');document.getElementById('g-note').value='';document.getElementById('g-grade').dataset.value='5';renderStars(document.getElementById('g-grade'),5);loadGrades();
+  toast('تم حفظ التقييم ✅','success');document.getElementById('g-note').value='';document.getElementById('g-grade').dataset.value='10';renderStars(document.getElementById('g-grade'),10);loadGrades();
 }
 async function deleteGrade(id){await sb.from('grades').delete().eq('id',id);toast('تم الحذف','success');loadGrades();}
 
@@ -1156,7 +1157,7 @@ async function addHymnGrade(){
   if(!sid||!hid)return toast('اختر طالب ولحن','error');
   const{error}=await sb.from('hymn_grades').insert({student_id:sid,hymn_id:hid,grade:document.getElementById('hg-grade').dataset.value,note:document.getElementById('hg-note').value.trim()||null,teacher_id:currentUser.id});
   if(error)return toast('خطأ: '+error.message,'error');
-  toast('تم حفظ التقييم ✅','success');document.getElementById('hg-note').value='';document.getElementById('hg-grade').dataset.value='5';renderStars(document.getElementById('hg-grade'),5);loadHymnGrades();
+  toast('تم حفظ التقييم ✅','success');document.getElementById('hg-note').value='';document.getElementById('hg-grade').dataset.value='10';renderStars(document.getElementById('hg-grade'),10);loadHymnGrades();
   const hymnName=document.getElementById('hg-hymn').selectedOptions[0]?.textContent||'';
   showTop3ForHymn(hid,hymnName);
 }
@@ -1182,7 +1183,7 @@ async function addMemoGrade(){
   if(!sid||!mid)return toast('اختر طالب ومحفوظة','error');
   const{error}=await sb.from('memo_grades').insert({student_id:sid,memo_id:mid,grade:document.getElementById('mg-grade').dataset.value,note:document.getElementById('mg-note').value.trim()||null,teacher_id:currentUser.id});
   if(error)return toast('خطأ: '+error.message,'error');
-  toast('تم حفظ التقييم ✅','success');document.getElementById('mg-note').value='';document.getElementById('mg-grade').dataset.value='5';renderStars(document.getElementById('mg-grade'),5);loadMemoGrades();
+  toast('تم حفظ التقييم ✅','success');document.getElementById('mg-note').value='';document.getElementById('mg-grade').dataset.value='10';renderStars(document.getElementById('mg-grade'),10);loadMemoGrades();
 }
 async function deleteMemoGrade(id){await sb.from('memo_grades').delete().eq('id',id);toast('تم الحذف','success');loadMemoGrades();}
 
@@ -1206,7 +1207,7 @@ async function addCopticGrade(){
   if(!sid||!cid)return toast('اختر طالب ودرس','error');
   const{error}=await sb.from('coptic_grades').insert({student_id:sid,coptic_id:cid,grade:document.getElementById('cg-grade').dataset.value,note:document.getElementById('cg-note').value.trim()||null,teacher_id:currentUser.id});
   if(error)return toast('خطأ: '+error.message,'error');
-  toast('تم حفظ التقييم ✅','success');document.getElementById('cg-note').value='';document.getElementById('cg-grade').dataset.value='5';renderStars(document.getElementById('cg-grade'),5);loadCopticGrades();
+  toast('تم حفظ التقييم ✅','success');document.getElementById('cg-note').value='';document.getElementById('cg-grade').dataset.value='10';renderStars(document.getElementById('cg-grade'),10);loadCopticGrades();
 }
 async function deleteCopticGrade(id){await sb.from('coptic_grades').delete().eq('id',id);toast('تم الحذف','success');loadCopticGrades();}
 
@@ -1229,7 +1230,7 @@ async function addTeacherCopticGrade(){
   if(!sid||!cid)return toast('اختر طالب ودرس','error');
   const{error}=await sb.from('coptic_grades').insert({student_id:sid,coptic_id:cid,grade:document.getElementById('tcg-grade').dataset.value,note:document.getElementById('tcg-note').value.trim()||null,teacher_id:currentUser.id});
   if(error)return toast('خطأ: '+error.message,'error');
-  toast('تم حفظ التقييم ✅','success');document.getElementById('tcg-note').value='';document.getElementById('tcg-grade').dataset.value='5';renderStars(document.getElementById('tcg-grade'),5);loadTeacherCopticGrades();
+  toast('تم حفظ التقييم ✅','success');document.getElementById('tcg-note').value='';document.getElementById('tcg-grade').dataset.value='10';renderStars(document.getElementById('tcg-grade'),10);loadTeacherCopticGrades();
 }
 
 // ── QUIZZES (admin) ──
@@ -1694,7 +1695,7 @@ async function addTeacherHymnGrade(){
   if(!sid||!hid)return toast('اختر طالب ولحن','error');
   const{error}=await sb.from('hymn_grades').insert({student_id:sid,hymn_id:hid,grade:document.getElementById('thg-grade').dataset.value,note:document.getElementById('thg-note').value.trim()||null,teacher_id:currentUser.id});
   if(error)return toast('خطأ: '+error.message,'error');
-  toast('تم حفظ التقييم ✅','success');document.getElementById('thg-note').value='';document.getElementById('thg-grade').dataset.value='5';renderStars(document.getElementById('thg-grade'),5);loadTeacherHymnGrades();
+  toast('تم حفظ التقييم ✅','success');document.getElementById('thg-note').value='';document.getElementById('thg-grade').dataset.value='10';renderStars(document.getElementById('thg-grade'),10);loadTeacherHymnGrades();
   const hymnName=document.getElementById('thg-hymn').selectedOptions[0]?.textContent||'';
   showTop3ForHymn(hid,hymnName);
 }
@@ -1718,7 +1719,7 @@ async function addTeacherMemoGrade(){
   if(!sid||!mid)return toast('اختر طالب ومحفوظة','error');
   const{error}=await sb.from('memo_grades').insert({student_id:sid,memo_id:mid,grade:document.getElementById('tmg-grade').dataset.value,note:document.getElementById('tmg-note').value.trim()||null,teacher_id:currentUser.id});
   if(error)return toast('خطأ: '+error.message,'error');
-  toast('تم حفظ التقييم ✅','success');document.getElementById('tmg-note').value='';document.getElementById('tmg-grade').dataset.value='5';renderStars(document.getElementById('tmg-grade'),5);loadTeacherMemoGrades();
+  toast('تم حفظ التقييم ✅','success');document.getElementById('tmg-note').value='';document.getElementById('tmg-grade').dataset.value='10';renderStars(document.getElementById('tmg-grade'),10);loadTeacherMemoGrades();
 }
 
 async function addTeacherGrade(){
@@ -1726,7 +1727,7 @@ async function addTeacherGrade(){
   if(!sid||!lid)return toast('اختر طالب ودرس','error');
   const{error}=await sb.from('grades').insert({student_id:sid,lesson_id:lid,grade:document.getElementById('tg-grade').dataset.value,note:document.getElementById('tg-note').value.trim()||null,teacher_id:currentUser.id});
   if(error)return toast('خطأ: '+error.message,'error');
-  toast('تم حفظ التقييم ✅','success');document.getElementById('tg-note').value='';document.getElementById('tg-grade').dataset.value='5';renderStars(document.getElementById('tg-grade'),5);loadTeacherGrades();
+  toast('تم حفظ التقييم ✅','success');document.getElementById('tg-note').value='';document.getElementById('tg-grade').dataset.value='10';renderStars(document.getElementById('tg-grade'),10);loadTeacherGrades();
 }
 async function loadTeacherLessons(){
   const cls=currentUser.class_access;let q=sb.from('lessons').select('*').order('lesson_date',{ascending:false});if(cls!=='all')q=q.eq('class',cls);
@@ -1783,7 +1784,6 @@ async function initStudent(){
 async function loadStudentLeaderboard(){
   const el=document.getElementById('s-leaderboard-list');
   const cat=currentUser.hymn_category||'level1';
-  const today=new Date().toISOString().split('T')[0];
   // get all hymns in this student's category
   const{data:hymns}=await sb.from('hymns').select('id,name,category,categories');
   const catHymns=(hymns||[]).filter(h=>{
@@ -1792,8 +1792,16 @@ async function loadStudentLeaderboard(){
   });
   if(!catHymns.length){el.innerHTML='<div class="empty">لا يوجد ألحان في قسمك بعد</div>';return;}
   const hymnIds=catHymns.map(h=>h.id);
-  const{data:grades}=await sb.from('hymn_grades').select('grade,hymn_id,created_at,students(name)').in('hymn_id',hymnIds).gte('created_at',today+'T00:00:00').lte('created_at',today+'T23:59:59');
-  if(!grades||!grades.length){el.innerHTML='<div class="empty">لا يوجد تقييمات ألحان اليوم بعد</div>';return;}
+  // find the most recent grading date for this category
+  const{data:latest}=await sb.from('hymn_grades').select('created_at').in('hymn_id',hymnIds).order('created_at',{ascending:false}).limit(1).single();
+  if(!latest){el.innerHTML='<div class="empty">لا يوجد تقييمات ألحان بعد</div>';return;}
+  const latestDate=latest.created_at.split('T')[0];
+  // window: from latestDate back 3 days (so the board stays visible for 3 days after that date)
+  const windowStart=new Date(latestDate);
+  windowStart.setDate(windowStart.getDate()-2);
+  const windowStartStr=windowStart.toISOString().split('T')[0];
+  const{data:grades}=await sb.from('hymn_grades').select('grade,hymn_id,created_at,students(name)').in('hymn_id',hymnIds).gte('created_at',windowStartStr+'T00:00:00').lte('created_at',latestDate+'T23:59:59');
+  if(!grades||!grades.length){el.innerHTML='<div class="empty">لا يوجد تقييمات ألحان بعد</div>';return;}
   const byStudent={};
   grades.forEach(r=>{
     const name=r.students?.name||'بدون اسم';
@@ -1801,11 +1809,12 @@ async function loadStudentLeaderboard(){
     byStudent[name].sum+=parseInt(r.grade)||0;
     byStudent[name].count++;
   });
-  const ranked=Object.entries(byStudent).map(([name,v])=>({name,avg:v.sum/v.count})).sort((a,b)=>b.avg-a.avg).slice(0,3);
-  if(!ranked.length){el.innerHTML='<div class="empty">لا يوجد تقييمات ألحان اليوم بعد</div>';return;}
-  const medals=['🥇','🥈','🥉'];
-  el.innerHTML=`<div class="section-header">📅 اليوم — أعلى 3 في ألحان قسمك</div>`+
-    ranked.map((r,i)=>`<div class="list-row"><span style="font-size:18px;width:28px">${medals[i]}</span><div class="row-info"><div class="row-name">${escHtml(r.name)}</div></div>${starsDisplay(Math.round(r.avg))}</div>`).join('');
+  const ranked=Object.entries(byStudent).map(([name,v])=>({name,sum:v.sum})).sort((a,b)=>b.sum-a.sum).slice(0,6);
+  if(!ranked.length){el.innerHTML='<div class="empty">لا يوجد تقييمات ألحان بعد</div>';return;}
+  const medals=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'];
+  const dateLabel=new Date(latestDate).toLocaleDateString('ar-EG',{day:'numeric',month:'long'});
+  el.innerHTML=`<div class="section-header">📅 ${dateLabel} — أعلى 6 (مجموع النجوم) في ألحان قسمك</div>`+
+    ranked.map((r,i)=>`<div class="list-row"><span style="font-size:18px;width:28px">${medals[i]}</span><div class="row-info"><div class="row-name">${escHtml(r.name)}</div></div><span class="badge badge-amber">⭐ ${r.sum}</span></div>`).join('');
 }
 async function loadStudentLessons(){
   const{data}=await sb.from('lessons').select('*').eq('class',currentUser.class).order('lesson_date',{ascending:false});
@@ -2187,11 +2196,11 @@ function editUser(u) {
 }
 
 // ── UTILS ──
-function gradeBadge(g){const n=parseInt(g)||0;return n>=4?'badge-green':n===3?'badge-blue':n===2?'badge-amber':'badge-red';}
+function gradeBadge(g){const n=parseInt(g)||0;return n>=8?'badge-green':n>=6?'badge-blue':n>=4?'badge-amber':'badge-red';}
 function starsDisplay(g){
   const n=parseInt(g)||0;
   let html='<span class="star-display">';
-  for(let i=1;i<=5;i++)html+=`<span class="star${i<=n?' filled':''}">★</span>`;
+  for(let i=1;i<=10;i++)html+=`<span class="star${i<=n?' filled':''}">★</span>`;
   return html+'</span>';
 }
 async function showTop3ForHymn(hymnId, hymnName){
@@ -2205,10 +2214,10 @@ async function showTop3ForHymn(hymnId, hymnName){
     byStudent[name].sum+=parseInt(r.grade)||0;
     byStudent[name].count++;
   });
-  const ranked=Object.entries(byStudent).map(([name,v])=>({name,avg:v.sum/v.count})).sort((a,b)=>b.avg-a.avg).slice(0,3);
+  const ranked=Object.entries(byStudent).map(([name,v])=>({name,avg:v.sum/v.count})).sort((a,b)=>b.avg-a.avg).slice(0,6);
   if(!ranked.length)return;
   document.getElementById('top3-hymn-name').textContent=hymnName;
-  const medals=['🥇','🥈','🥉'];
+  const medals=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'];
   document.getElementById('top3-list').innerHTML=ranked.map((r,i)=>`<div class="top3-row rank-${i+1}"><span class="top3-medal">${medals[i]}</span><span class="top3-name">${escHtml(r.name)}</span><span class="top3-stars">${starsDisplay(Math.round(r.avg))}</span></div>`).join('');
   document.getElementById('top3-overlay').classList.add('open');
 }
@@ -2218,7 +2227,7 @@ function initStarRatings(){
   document.querySelectorAll('.star-rating').forEach(container=>{
     if(container.dataset.init)return;
     container.dataset.init='1';
-    const val=parseInt(container.dataset.value)||5;
+    const val=parseInt(container.dataset.value)||10;
     renderStars(container,val);
     container.addEventListener('click',e=>{
       const star=e.target.closest('.star');
@@ -2231,7 +2240,7 @@ function initStarRatings(){
 }
 function renderStars(container,val){
   container.innerHTML='';
-  for(let i=1;i<=5;i++){
+  for(let i=1;i<=10;i++){
     const s=document.createElement('span');
     s.className='star'+(i<=val?' filled':'');
     s.dataset.i=i;
@@ -2273,7 +2282,7 @@ autoLogin();
 <!-- ══ TOP 3 LEADERBOARD MODAL ══ -->
 <div class="top3-overlay" id="top3-overlay" onclick="if(event.target.id==='top3-overlay')closeTop3()">
   <div class="top3-box">
-    <div class="top3-title">🏆 أعلى 3 في هذا اللحن</div>
+    <div class="top3-title">🏆 أعلى 6 في هذا اللحن</div>
     <div class="top3-sub" id="top3-hymn-name"></div>
     <div id="top3-list"></div>
     <button class="btn btn-primary top3-close" onclick="closeTop3()">تمام 👍</button>
