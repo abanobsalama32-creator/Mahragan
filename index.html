@@ -800,7 +800,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let currentUser=null,attendanceMap={},teacherStudents=[];
 let allHymns=[],allMemo=[],allTHymns=[],allTMemo=[],allSMemo=[],allCoptic=[],allTCoptic=[],allSCoptic=[];
-let lessonCache={},hymnCache2={},gradeCache={},userCache={},studentCache={},memoCache={},hymnSelectCache={},copticCache={};
+let lessonCache={},hymnCache2={},gradeCache={},userCache={},studentCache={},memoCache={},hymnSelectCache={},copticCache={},hymnGradeCache={},copticGradeCache={},memoGradeCache={};
 
 const HYMN_LABELS={'level1':'مستوى أول','level2':'مستوى ثاني','solo_talented':'فردي موهوبين','group_talented':'جماعي موهوبين'};
 const CAT_LABELS={'gospel':'إنجيل','psalms':'مزامير','general':'قطع','solo':'فردي','group':'جماعي'};
@@ -1150,7 +1150,8 @@ async function loadHymnGrades(){
   const el=document.getElementById('hymn-grades-list');
   if(!el)return;
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد تقييمات بعد</div>';return;}
-  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.hymns?.name)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm btn-danger" onclick="deleteHymnGrade('${g.id}')">🗑</button></div>`).join('');
+  data.forEach(g=>hymnGradeCache[g.id]=g);
+  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.hymns?.name)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm" onclick="editHymnGradeById('${g.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteHymnGrade('${g.id}')">🗑</button></div>`).join('');
 }
 async function addHymnGrade(){
   const sid=document.getElementById('hg-student').value,hid=document.getElementById('hg-hymn').value;
@@ -1176,7 +1177,24 @@ async function loadMemoGrades(){
   const el=document.getElementById('memo-grades-list');
   if(!el)return;
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد تقييمات بعد</div>';return;}
-  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.memorizations?.title)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm btn-danger" onclick="deleteMemoGrade('${g.id}')">🗑</button></div>`).join('');
+  data.forEach(g=>memoGradeCache[g.id]=g);
+  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.memorizations?.title)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm" onclick="editMemoGradeById('${g.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteMemoGrade('${g.id}')">🗑</button></div>`).join('');
+}
+function editMemoGradeById(id){editMemoGrade(memoGradeCache[id]);}
+function editMemoGrade(g){
+  openModal('✏️ تعديل تقييم المحفوظة', `
+    <div class="form-row"><div style="flex:1"><label>التقييم</label><div class="star-rating" id="emg-grade" data-value="${parseInt(g.grade)||10}"></div></div></div>
+    <div class="form-row"><div style="flex:1"><label>ملاحظة</label><input type="text" id="emg-note" value="${g.note||''}"></div></div>
+  `, async () => {
+    const {error} = await sb.from('memo_grades').update({
+      grade: document.getElementById('emg-grade').dataset.value,
+      note: document.getElementById('emg-note').value.trim()||null
+    }).eq('id', g.id);
+    if(error) return toast('خطأ: '+error.message,'error');
+    toast('تم التعديل ✅','success'); closeModal();
+    if(document.getElementById('memo-grades-list'))loadMemoGrades();
+    if(document.getElementById('tmg-list'))loadTeacherMemoGrades();
+  });
 }
 async function addMemoGrade(){
   const sid=document.getElementById('mg-student').value,mid=document.getElementById('mg-memo').value;
@@ -1200,7 +1218,24 @@ async function loadCopticGrades(){
   const el=document.getElementById('coptic-grades-list');
   if(!el)return;
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد تقييمات بعد</div>';return;}
-  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.coptic_hymns?.name)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm btn-danger" onclick="deleteCopticGrade('${g.id}')">🗑</button></div>`).join('');
+  data.forEach(g=>copticGradeCache[g.id]=g);
+  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.coptic_hymns?.name)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm" onclick="editCopticGradeById('${g.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteCopticGrade('${g.id}')">🗑</button></div>`).join('');
+}
+function editCopticGradeById(id){editCopticGrade(copticGradeCache[id]);}
+function editCopticGrade(g){
+  openModal('✏️ تعديل تقييم الدرس القبطي', `
+    <div class="form-row"><div style="flex:1"><label>التقييم</label><div class="star-rating" id="ecg-grade" data-value="${parseInt(g.grade)||10}"></div></div></div>
+    <div class="form-row"><div style="flex:1"><label>ملاحظة</label><input type="text" id="ecg-note" value="${g.note||''}"></div></div>
+  `, async () => {
+    const {error} = await sb.from('coptic_grades').update({
+      grade: document.getElementById('ecg-grade').dataset.value,
+      note: document.getElementById('ecg-note').value.trim()||null
+    }).eq('id', g.id);
+    if(error) return toast('خطأ: '+error.message,'error');
+    toast('تم التعديل ✅','success'); closeModal();
+    if(document.getElementById('coptic-grades-list'))loadCopticGrades();
+    if(document.getElementById('tcg-list'))loadTeacherCopticGrades();
+  });
 }
 async function addCopticGrade(){
   const sid=document.getElementById('cg-student').value,cid=document.getElementById('cg-coptic').value;
@@ -1223,8 +1258,10 @@ async function loadTeacherCopticGrades(){
   const el=document.getElementById('tcg-list');
   if(!el)return;
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد تقييمات</div>';return;}
-  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.coptic_hymns?.name)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}</div>`).join('');
+  data.forEach(g=>copticGradeCache[g.id]=g);
+  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.coptic_hymns?.name)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm" onclick="editCopticGradeById('${g.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteTeacherCopticGrade('${g.id}')">🗑</button></div>`).join('');
 }
+async function deleteTeacherCopticGrade(id){await sb.from('coptic_grades').delete().eq('id',id);toast('تم الحذف','success');loadTeacherCopticGrades();}
 async function addTeacherCopticGrade(){
   const sid=document.getElementById('tcg-student').value,cid=document.getElementById('tcg-coptic').value;
   if(!sid||!cid)return toast('اختر طالب ودرس','error');
@@ -1669,8 +1706,10 @@ async function loadTeacherGrades(){
   const{data}=await sb.from('grades').select('*,students(name),lessons(title)').in('student_id',ids).order('created_at',{ascending:false});
   const el=document.getElementById('tg-list');
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد تقييمات</div>';return;}
-  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.lessons?.title)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}</div>`).join('');
+  data.forEach(g=>gradeCache[g.id]=g);
+  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.lessons?.title)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm" onclick="editGradeById('${g.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteTeacherGrade('${g.id}')">🗑</button></div>`).join('');
 }
+async function deleteTeacherGrade(id){await sb.from('grades').delete().eq('id',id);toast('تم الحذف','success');loadTeacherGrades();}
 
 // ── TEACHER HYMN GRADES ──
 async function loadTeacherHymnGradeSelects(){
@@ -1688,7 +1727,25 @@ async function loadTeacherHymnGrades(){
   const el=document.getElementById('thg-list');
   if(!el)return;
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد تقييمات</div>';return;}
-  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.hymns?.name)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}</div>`).join('');
+  data.forEach(g=>hymnGradeCache[g.id]=g);
+  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.hymns?.name)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm" onclick="editHymnGradeById('${g.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteTeacherHymnGrade('${g.id}')">🗑</button></div>`).join('');
+}
+async function deleteTeacherHymnGrade(id){await sb.from('hymn_grades').delete().eq('id',id);toast('تم الحذف','success');loadTeacherHymnGrades();}
+function editHymnGradeById(id){editHymnGrade(hymnGradeCache[id]);}
+function editHymnGrade(g){
+  openModal('✏️ تعديل تقييم اللحن', `
+    <div class="form-row"><div style="flex:1"><label>التقييم</label><div class="star-rating" id="ehg-grade" data-value="${parseInt(g.grade)||10}"></div></div></div>
+    <div class="form-row"><div style="flex:1"><label>ملاحظة</label><input type="text" id="ehg-note" value="${g.note||''}"></div></div>
+  `, async () => {
+    const {error} = await sb.from('hymn_grades').update({
+      grade: document.getElementById('ehg-grade').dataset.value,
+      note: document.getElementById('ehg-note').value.trim()||null
+    }).eq('id', g.id);
+    if(error) return toast('خطأ: '+error.message,'error');
+    toast('تم التعديل ✅','success'); closeModal();
+    if(document.getElementById('hymn-grades-list'))loadHymnGrades();
+    if(document.getElementById('thg-list'))loadTeacherHymnGrades();
+  });
 }
 async function addTeacherHymnGrade(){
   const sid=document.getElementById('thg-student').value,hid=document.getElementById('thg-hymn').value;
@@ -1712,8 +1769,10 @@ async function loadTeacherMemoGrades(){
   const el=document.getElementById('tmg-list');
   if(!el)return;
   if(!data||!data.length){el.innerHTML='<div class="empty">لا يوجد تقييمات</div>';return;}
-  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.memorizations?.title)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}</div>`).join('');
+  data.forEach(g=>memoGradeCache[g.id]=g);
+  el.innerHTML=data.map(g=>`<div class="list-row"><div class="row-info"><div class="row-name">${escHtml(g.students?.name)||'-'}</div><div class="row-sub">${escHtml(g.memorizations?.title)||'-'}${g.note?' · '+escHtml(g.note):''}</div></div>${starsDisplay(g.grade)}<button class="btn btn-sm" onclick="editMemoGradeById('${g.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteTeacherMemoGrade('${g.id}')">🗑</button></div>`).join('');
 }
+async function deleteTeacherMemoGrade(id){await sb.from('memo_grades').delete().eq('id',id);toast('تم الحذف','success');loadTeacherMemoGrades();}
 async function addTeacherMemoGrade(){
   const sid=document.getElementById('tmg-student').value,mid=document.getElementById('tmg-memo').value;
   if(!sid||!mid)return toast('اختر طالب ومحفوظة','error');
@@ -1809,12 +1868,20 @@ async function loadStudentLeaderboard(){
     byStudent[name].sum+=parseInt(r.grade)||0;
     byStudent[name].count++;
   });
-  const ranked=Object.entries(byStudent).map(([name,v])=>({name,sum:v.sum})).sort((a,b)=>b.sum-a.sum).slice(0,6);
-  if(!ranked.length){el.innerHTML='<div class="empty">لا يوجد تقييمات ألحان بعد</div>';return;}
-  const medals=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'];
+  const sorted=Object.entries(byStudent).map(([name,v])=>({name,sum:v.sum})).sort((a,b)=>b.sum-a.sum);
+  if(!sorted.length){el.innerHTML='<div class="empty">لا يوجد تقييمات ألحان بعد</div>';return;}
+  // group students by their total sum so ties share the same rank
+  const groups=[];
+  sorted.forEach(s=>{
+    const lastGroup=groups[groups.length-1];
+    if(lastGroup&&lastGroup.sum===s.sum)lastGroup.names.push(s.name);
+    else groups.push({sum:s.sum,names:[s.name]});
+  });
+  const top3Groups=groups.slice(0,3);
+  const medals=['🥇','🥈','🥉'];
   const dateLabel=new Date(latestDate).toLocaleDateString('ar-EG',{day:'numeric',month:'long'});
-  el.innerHTML=`<div class="section-header">📅 ${dateLabel} — أعلى 6 (مجموع النجوم) في ألحان قسمك</div>`+
-    ranked.map((r,i)=>`<div class="list-row"><span style="font-size:18px;width:28px">${medals[i]}</span><div class="row-info"><div class="row-name">${escHtml(r.name)}</div></div><span class="badge badge-amber">⭐ ${r.sum}</span></div>`).join('');
+  el.innerHTML=`<div class="section-header">📅 ${dateLabel} — أعلى 3 مراكز (مجموع النجوم) في ألحان قسمك</div>`+
+    top3Groups.map((g,i)=>`<div class="list-row"><span style="font-size:18px;width:28px">${medals[i]}</span><div class="row-info"><div class="row-name">${g.names.map(n=>escHtml(n)).join('، ')}</div></div><span class="badge badge-amber">⭐ ${g.sum}</span></div>`).join('');
 }
 async function loadStudentLessons(){
   const{data}=await sb.from('lessons').select('*').eq('class',currentUser.class).order('lesson_date',{ascending:false});
@@ -2128,7 +2195,7 @@ function editMemo(m) {
 // ── EDIT GRADE ──
 function editGrade(g) {
   openModal('✏️ تعديل التقييم', `
-    <div class="form-row"><div style="flex:1"><label>التقييم</label><div class="star-rating" id="eg-grade" data-value="${parseInt(g.grade)||5}"></div></div></div>
+    <div class="form-row"><div style="flex:1"><label>التقييم</label><div class="star-rating" id="eg-grade" data-value="${parseInt(g.grade)||10}"></div></div></div>
     <div class="form-row"><div style="flex:1"><label>ملاحظة</label><input type="text" id="eg-note" value="${g.note||''}"></div></div>
   `, async () => {
     const {error} = await sb.from('grades').update({
@@ -2136,7 +2203,9 @@ function editGrade(g) {
       note: document.getElementById('eg-note').value.trim()||null
     }).eq('id', g.id);
     if(error) return toast('خطأ: '+error.message,'error');
-    toast('تم التعديل ✅','success'); closeModal(); loadGrades();
+    toast('تم التعديل ✅','success'); closeModal();
+    if(document.getElementById('grades-list'))loadGrades();
+    if(document.getElementById('tg-list'))loadTeacherGrades();
   });
 }
 
